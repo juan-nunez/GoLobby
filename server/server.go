@@ -8,17 +8,17 @@ import (
 )
 
 
-type server struct {
+type Server struct {
 
 }
 
 
-func New() *server {
-    return &server{}
+func New() *Server {
+    return &Server{}
 }
 
 
-func (s *server) handleConnection(conn net.Conn) {
+func (s *Server) handleConnection(conn net.Conn) {
     for {
         message, _ := bufio.NewReader(conn).ReadString('\n')
         fmt.Println(string(message))
@@ -27,8 +27,13 @@ func (s *server) handleConnection(conn net.Conn) {
 }
 
 
+func handleMessage(message string, conn net.Conn) {
+       
 
-func (s *server) Listen() {
+}
+
+
+func (s *Server) Listen() {
     ln, _ := net.Listen("tcp", ":8080")
     for {
         conn, _ := ln.Accept()
