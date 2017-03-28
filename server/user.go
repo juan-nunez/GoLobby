@@ -3,5 +3,5 @@ package server
 
 
 type User struct {
-    id uint16
+    id string
 }
