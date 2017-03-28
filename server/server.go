@@ -15,7 +15,8 @@ type Server struct {
 
 
 func New() *Server {
-    return &Server{}
+    server := Server{ pool:make(map[string]net.Conn) }
+    return &server
 }
 
 
@@ -45,7 +46,7 @@ func (s *Server) handleMessage(message string, conn net.Conn) {
         }
 
         messageType := values["type"]
-        
+        fmt.Println(messageType)    
         switch messageType {
             case "LOGIN":
                 s.handleLogin(values, conn)
