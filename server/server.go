@@ -10,12 +10,12 @@ import (
 
 
 type Server struct {
-    pool map[string]net.Conn
+    users map[string]User
 }
 
 
 func New() *Server {
-    server := Server{ pool:make(map[string]net.Conn) }
+    server := Server{ users:make(map[string]User) }
     return &server
 }
 
@@ -30,7 +30,6 @@ func (s *Server) handleConnection(conn net.Conn) {
             fmt.Println(error)
             continue
         }
-
         s.handleMessage(message, conn)
     } 
 }
@@ -58,17 +57,18 @@ func (s *Server) handleMessage(message string, conn net.Conn) {
 
         } 
 
-        conn.Write([]byte("received\n"))
 
 }
 
 func (s *Server) handleLogin(values map[string]string, conn net.Conn) {
-    s.pool[values["value"]] = conn
+    userId := values["value"]
+    user := User{userId, conn}
+    s.users[values["value"]] = user
 }
 
 func (s *Server) handleSendUser(values map[string]string) {
     sendUserId := values["send_user_id"] 
-    sendUserConn := s.pool[sendUserId]
+    sendUserConn := s.users[sendUserId].conn
     message := values["message"]
     sendUserConn.Write([]byte(message))
 }
