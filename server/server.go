@@ -26,9 +26,8 @@ func (s *Server) handleConnection(conn net.Conn) {
     for {
         message, error := reader.ReadString('\n')
         if error != nil {
-            fmt.Println("ERROR")
-            fmt.Println(error)
-            continue
+            conn.Close() 
+            break 
         }
         s.handleMessage(message, conn)
     } 
@@ -40,7 +39,6 @@ func (s *Server) handleMessage(message string, conn net.Conn) {
         e := json.Unmarshal([]byte(message), &values) 
         if e != nil {
             fmt.Println("Unmarshal error")
-            fmt.Println(e)
             return
         }
 
@@ -53,26 +51,33 @@ func (s *Server) handleMessage(message string, conn net.Conn) {
             case "SEND_LOBBY":
             case "SEND_USER":
                 s.handleSendUser(values)
-
-
         } 
-
-
 }
 
 func (s *Server) handleLogin(values map[string]string, conn net.Conn) {
-    userId := values["value"]
-    user := User{userId, conn}
-    s.users[values["value"]] = user
+    username := values["username"]
+    userId := "5"
+    user := User{userId, username, conn}
+    s.users[values["username"]] = user
 }
 
 func (s *Server) handleSendUser(values map[string]string) {
-    sendUserId := values["send_user_id"] 
-    sendUserConn := s.users[sendUserId].conn
+    sendUsername := values["to"] 
+    me := values["from"]
+    sendUserConn := s.users[sendUsername].conn
     message := values["message"]
-    sendUserConn.Write([]byte(message))
+    jsonifiedMessage := s.formatSendMessage(me, message)
+    sendUserConn.Write(jsonifiedMessage)
 }
 
+
+func (s *Server) formatSendMessage(username, message string) []byte {
+    formattedMessage := make(map[string]string)
+    formattedMessage["from"] = username
+    formattedMessage["message"] = message
+    jsonifiedMessage, _ := json.Marshal(formattedMessage)
+    return jsonifiedMessage
+}
 
 func (s *Server) Listen() {
     ln, _ := net.Listen("tcp", ":8080")

@@ -6,5 +6,6 @@ import (
 
 type User struct {
     id string
+    name string
     conn net.Conn
 }
