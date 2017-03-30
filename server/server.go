@@ -50,7 +50,7 @@ func (s *Server) handleMessage(message string, conn net.Conn) {
             case "JOIN_LOBBY":
             case "SEND_LOBBY":
             case "SEND_USER":
-                s.handleSendUser(values)
+                s.handleSendUser(values, conn)
         } 
 }
 
@@ -61,9 +61,9 @@ func (s *Server) handleLogin(values map[string]string, conn net.Conn) {
     s.users[values["username"]] = user
 }
 
-func (s *Server) handleSendUser(values map[string]string) {
+func (s *Server) handleSendUser(values map[string]string, conn net.Conn) {
     sendUsername := values["to"] 
-    me := values["from"]
+    me := s.getNameByConn(conn) 
     sendUserConn := s.users[sendUsername].conn
     message := values["message"]
     jsonifiedMessage := s.formatSendMessage(me, message)
@@ -77,6 +77,16 @@ func (s *Server) formatSendMessage(username, message string) []byte {
     formattedMessage["message"] = message
     jsonifiedMessage, _ := json.Marshal(formattedMessage)
     return jsonifiedMessage
+}
+
+func (s *Server) getNameByConn(conn net.Conn) string {
+    users := s.users
+    for _, user := range users {
+        if user.conn == conn {
+            return user.name
+        }
+    }
+    return "unknown"
 }
 
 func (s *Server) Listen() {
