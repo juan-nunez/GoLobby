@@ -5,14 +5,14 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 sock.connect(("localhost", 8080))
 
-name = raw_input("name: ")
-d = {"type": "LOGIN", "username": name}
+name = raw_input("Your name: ")
+d = {"type": "REGISTER", "username": name}
 encoded = json.dumps(d)
 sock.send(encoded + "\n")
-username = raw_input("username: ")
+username = raw_input("username of receiver: ")
 while True:
     message = raw_input("Message:")
-    d = {"type" : "SEND_USER", "message": message, "to" : username, "from": name} 
+    d = {"type" : "SEND_USER", "message": message, "to" : username} 
     encoded = json.dumps(d)
     sock.send(encoded + "\n")
     data = sock.recv(1024)
