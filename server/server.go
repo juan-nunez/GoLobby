@@ -8,6 +8,7 @@ import (
     "encoding/json"
     "math/rand"
     "strconv"
+    "errors"
 )
 
 
@@ -37,7 +38,9 @@ func (s *Server) handleConnection(conn net.Conn) {
     for {
         message, error := reader.ReadString('\n')
         if error != nil {
-            conn.Close() 
+            user, _ := s.getUserByConn(conn)
+            delete(s.users, user.name)
+            defer conn.Close()
             break 
         }
         s.handleMessage(message, conn)
@@ -72,13 +75,19 @@ func (s *Server) handleRegister(values map[string]string, conn net.Conn) {
 
 func (s *Server) handleSendUser(values map[string]string, conn net.Conn) {
     sendUsername := values["to"] 
-    me := s.getNameByConn(conn) 
+    me, error := s.getUserByConn(conn) 
+    var myName string
+    if error != nil {
+       myName = "unknown" 
+    } else {
+    myName = me.name
+    }
     sendUserConn := s.users[sendUsername].conn
     if sendUserConn == nil {
         return
     }
     message := values["message"]
-    jsonifiedMessage := s.formatSendMessage(me, message)
+    jsonifiedMessage := s.formatSendMessage(myName, message)
     sendUserConn.Write(jsonifiedMessage)
 }
 
@@ -91,13 +100,14 @@ func (s *Server) formatSendMessage(username, message string) []byte {
     return jsonifiedMessage
 }
 
-func (s *Server) getNameByConn(conn net.Conn) string {
+func (s *Server) getUserByConn(conn net.Conn) (User, error) {
     users := s.users
     for _, user := range users {
         if user.conn == conn {
-            return user.name
+            return user, nil
         }
     }
-    return "unknown"
+    error := errors.New("No user found")
+    return User{}, error
 }
 
