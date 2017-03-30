@@ -6,6 +6,8 @@ import (
     "net"
     "bufio"
     "encoding/json"
+    "math/rand"
+    "strconv"
 )
 
 
@@ -17,6 +19,15 @@ type Server struct {
 func New() *Server {
     server := Server{ users:make(map[string]User) }
     return &server
+}
+
+
+func (s *Server) Listen() {
+    ln, _ := net.Listen("tcp", ":8080")
+    for {
+        conn, _ := ln.Accept()
+        go s.handleConnection(conn) 
+    }      
 }
 
 
@@ -45,18 +56,16 @@ func (s *Server) handleMessage(message string, conn net.Conn) {
         messageType := values["type"]
         fmt.Println(messageType)    
         switch messageType {
-            case "LOGIN":
-                s.handleLogin(values, conn)
-            case "JOIN_LOBBY":
-            case "SEND_LOBBY":
+            case "REGISTER":
+                s.handleRegister(values, conn)
             case "SEND_USER":
                 s.handleSendUser(values, conn)
         } 
 }
 
-func (s *Server) handleLogin(values map[string]string, conn net.Conn) {
+func (s *Server) handleRegister(values map[string]string, conn net.Conn) {
     username := values["username"]
-    userId := "5"
+    userId := strconv.Itoa(rand.Int())
     user := User{userId, username, conn}
     s.users[values["username"]] = user
 }
@@ -65,6 +74,9 @@ func (s *Server) handleSendUser(values map[string]string, conn net.Conn) {
     sendUsername := values["to"] 
     me := s.getNameByConn(conn) 
     sendUserConn := s.users[sendUsername].conn
+    if sendUserConn == nil {
+        return
+    }
     message := values["message"]
     jsonifiedMessage := s.formatSendMessage(me, message)
     sendUserConn.Write(jsonifiedMessage)
@@ -89,10 +101,3 @@ func (s *Server) getNameByConn(conn net.Conn) string {
     return "unknown"
 }
 
-func (s *Server) Listen() {
-    ln, _ := net.Listen("tcp", ":8080")
-    for {
-        conn, _ := ln.Accept()
-        go s.handleConnection(conn) 
-    }      
-}
