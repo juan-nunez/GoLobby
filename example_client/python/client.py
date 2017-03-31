@@ -2,6 +2,7 @@ import socket
 import json
 import threading
 
+
 sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
 sock.connect(("localhost", 8080))
@@ -22,7 +23,7 @@ def receiver():
 def sender():
     while True:
         message = raw_input("Message:")
-        d = {"type" : "SEND_USER", "message": message, "to" : username} 
+        d = {"type" : "MSG_USER", "message": message, "to" : username} 
         encoded = json.dumps(d)
         sock.send(encoded + "\n")
 

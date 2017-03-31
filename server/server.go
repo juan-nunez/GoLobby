@@ -61,13 +61,20 @@ func (s *Server) handleMessage(message string, conn net.Conn) {
         switch messageType {
             case "REGISTER":
                 s.handleRegister(values, conn)
-            case "SEND_USER":
+            case "MSG_USER":
                 s.handleSendUser(values, conn)
         } 
 }
 
 func (s *Server) handleRegister(values map[string]string, conn net.Conn) {
     username := values["username"]
+    if _, ok := s.users[username]; ok {
+        message := "Username already exists"
+        m := newRegisterErrorMessage(message)
+        jsonified := messageToJson(m)
+        conn.Write(jsonified)
+        return
+    }
     userId := strconv.Itoa(rand.Int())
     user := User{userId, username, conn}
     s.users[values["username"]] = user
@@ -80,25 +87,19 @@ func (s *Server) handleSendUser(values map[string]string, conn net.Conn) {
     if error != nil {
        myName = "unknown" 
     } else {
-    myName = me.name
+        myName = me.name
     }
     sendUserConn := s.users[sendUsername].conn
     if sendUserConn == nil {
         return
     }
     message := values["message"]
-    jsonifiedMessage := s.formatSendMessage(myName, message)
-    sendUserConn.Write(jsonifiedMessage)
+    m := newSendMessage(myName, message)
+    jsonified := messageToJson(m)
+    sendUserConn.Write(jsonified)
 }
 
 
-func (s *Server) formatSendMessage(username, message string) []byte {
-    formattedMessage := make(map[string]string)
-    formattedMessage["from"] = username
-    formattedMessage["message"] = message
-    jsonifiedMessage, _ := json.Marshal(formattedMessage)
-    return jsonifiedMessage
-}
 
 func (s *Server) getUserByConn(conn net.Conn) (User, error) {
     users := s.users
