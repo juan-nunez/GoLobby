@@ -63,6 +63,10 @@ func (s *Server) handleMessage(message string, conn net.Conn) {
                 s.handleRegister(values, conn)
             case "MSG_USER":
                 s.handleSendUser(values, conn)
+            case "MSG_ALL":
+                s.handleSendAll(values, conn)
+            case "USER_LIST":
+                s.handleUserList(conn)
         } 
 }
 
@@ -99,6 +103,34 @@ func (s *Server) handleSendUser(values map[string]string, conn net.Conn) {
     sendUserConn.Write(jsonified)
 }
 
+func (s *Server) handleSendAll(values map[string]string, conn net.Conn) {
+    me, error := s.getUserByConn(conn)
+    var myName string;
+    if error != nil {
+       myName = "unknown" 
+    } else {
+        myName = me.name
+    }
+    message := values["message"]
+    m:= newSendMessage(myName, message)
+    jsonified := messageToJson(m)
+    
+    for _, user := range s.users {
+        if myName != user.name {
+            user.conn.Write(jsonified)
+        }
+    }
+}
+
+func (s *Server) handleUserList(conn net.Conn) {
+    usernames := make([]string, 0)
+    for _, user := range s.users {
+        usernames = append(usernames,user.name)
+    }
+    m := newUserListMessage(usernames)
+    jsonified := messageToJson(m)
+    conn.Write(jsonified)
+}
 
 
 func (s *Server) getUserByConn(conn net.Conn) (User, error) {
